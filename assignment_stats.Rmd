@@ -8,15 +8,11 @@ library(corrplot)
 library(MASS)
 library(psych)
 library(ggplot2)
+
 path = '/Users/sanjokdangol/Documents/college/Stats/customer_shopping_data_1695379411426.csv';
 data = read.csv(path, header=T)
-attach(data)
-
-names(data)
 
 head(data)
-
-summary(data)
 
 ```
 ```{r}
@@ -66,24 +62,11 @@ tail(data)
 x_data <- data[,!(names(data) %in% c("invoice_no","customer_id","quantity","gender","invoice_date","shopping_mall"))]
 x_data
 ```
-```{r}
-# convert invoice_date to Date format 
-shopping_data <- data
-shopping_data$invoice_date <- as.Date(shopping_data$invoice_date,format = "%d/%m/%Y")
-
-# create a time series object with monthly frequency(assuming data is monthly)
-shopping_data.ts <-ts(x,start = c(as.numeric(format(min(shopping_data$invoice_date),"%Y")),
-                                  as.numeric(format(min(shopping_data$invoice_date),"%m"))),
-                      end = c(as.numeric(format(max(shopping_data$invoice_date),"%Y")),as.numeric(format(max(shopping_data$invoice_date),"%m"))),frequency = 12)
-
-
-# plot the time series of input x with one-month interval
-plot(shopping_data.ts,main = "Time series plot of Input",xlab = "Invoice Date",ylab = "inputs")
-```
 
 
 ```{r}
-
+# Task 1.1: Time Series Analysis:
+  
 customer_data$invoice_date <- as.Date(customer_data$invoice_date, format = "%d/%m/%Y")
 
 # Calculate sales in thousands (quantity * price)
@@ -149,7 +132,8 @@ customer_data.ts <-ts(x,start = c(as.numeric(format(min(customer_data$invoice_da
 plot(customer_data.ts, main = "Time series plot of Input",xlab = "Invoice Date",ylab = "inputs")
 ```
 ```{r}
-## Task 1.2
+# 1.2. Distribution Analysis:
+
 x$price <- as.numeric(x$price)
 density_of_price = density(x$price)
 plot(density_of_price,main = "Density plot of price")
@@ -194,7 +178,7 @@ density_of_category = density(x$category)
 
 plot(density_of_category,main = "Density plot of whole inputs")
 # creating  a Histogram of X inputs
-hist(x$category,freq = FALSE,main = "Histogram and density plot of age",xlab = "age")
+hist(x$category,freq = FALSE,main = "Histogram and density plot of age",xlab = "category")
 lines(density_of_category, lwd = 2, col = "black")
 rug(jitter(x$category))
 ```
@@ -209,6 +193,7 @@ rug(jitter(x$quantity))
 ```
 
 ```{r}
+# 1.3. Correlation and Scatter Plots:
 pairs.panels(data[,3:7], method = "pearson", hist.col = "#00AFBB", density = TRUE, ellipses = TRUE)
 ```
 ```{r}
@@ -216,15 +201,19 @@ pairs.panels(data[,3:7], method = "pearson", hist.col = "#00AFBB", density = TRU
 # plotting age against quantity
 Y <- shopping_data$quantity
 plot(x$age,Y,main = "Correlation between age and quantity signal",xlab = "age",ylab = "quantity")
-plot(x$price,Y,main = "Correlation between age and quantity signal",xlab = "price",ylab = "quantity")
-plot(x$category,Y,main = "Correlation between age and quantity signal",xlab = "category",ylab = "quantity")
+plot(x$price,Y,main = "Correlation between price and quantity signal",xlab = "price",ylab = "quantity")
+plot(x$category,Y,main = "Correlation between category and quantity signal",xlab = "category",ylab = "quantity")
 
-plot(x$payment_method,Y,main = "Correlation between age and quantity signal",xlab = "payment_method",ylab = "quantity")
+plot(x$payment_method,Y,main = "Correlation between payment and quantity signal",xlab = "payment_method",ylab = "quantity")
 
 
 ```
 
 ```{r}
+# Task 2: Regression - Modeling the Relationship Between Sales Data
+# TASK 2.1 Calculation of Theta Hat
+# TASK 2.2 Model Residual Error
+# Task 2.4: Akaike Information Criterion (AIC) And Bayesian Information Criterion (BIC)
   # Copy necessary columns from 'data' DataFrame to create a new DataFrame 'X'
   X <- data.frame(X1 = x$age, X2 = x$category, X3 = x$price, X4 = x$payment_method)
 
@@ -306,6 +295,7 @@ for (i in seq_along(lm_models)) {
 ```
 
 ```{r}
+# 2.3 Log Likelihood Function Evaluation
 # Define the function to calculate likelihoods for each model using RSS
 calculate_likelihoods <- function(lm_models) {
   # Define a list to store likelihoods
@@ -345,6 +335,7 @@ for (i in seq_along(likelihoods)) {
 ```
 
 ```{r}
+# TASK 2.5 QQ Plot
 # Plot QQ plot for each fitted model
 for (i in seq_along(lm_models)) {
   cat("Model ", i, ":\n")
@@ -385,7 +376,7 @@ cat("BIC:", best_model$statistics["BIC"], "\n")
 cat("RSS:", best_model$statistics["RSS"], "\n")
 ```
 ```{r}
-
+# Task 2.7 Test and Train Best Model
 # Load necessary libraries
 library(tidymodels)
 
@@ -432,6 +423,7 @@ legend("topright", legend = c("Testing Data", "Model Predictions", "95% CI"), co
 
 ```
 ```{r}
+# Task 3: Approximate Bayesian computation (ABC) to compute the posterior distribution of the regression model parameters.
 # Split the data into training and testing sets
 split_X <- initial_split(data = as.data.frame(X), prop = 0.7)
 split_Y <- initial_split(data = as.data.frame(data$quantity), prop = 0.7)
