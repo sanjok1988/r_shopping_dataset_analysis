@@ -1,0 +1,501 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(corrplot)
+library(MASS)
+library(psych)
+library(ggplot2)
+path = '/Users/sanjokdangol/Documents/college/Stats/customer_shopping_data_1695379411426.csv';
+data = read.csv(path, header=T)
+attach(data)
+
+names(data)
+
+head(data)
+
+summary(data)
+
+```
+```{r}
+# checking missing values in dataset
+missing_values <- is.na(data)
+missing_values_count <- colSums(missing_values)
+missing_values_count
+```
+```{r}
+# convert shopping data into dataframe
+shopping_data <- as.data.frame(data)
+
+unique_age <-unique(shopping_data$age)
+print(unique_age)
+```
+```{r}
+unique_gender <-unique(data$gender)
+print(unique_gender)
+
+unique_category <-unique(data$category)
+print(unique_category)
+
+unique_payment_method <- unique(data$payment_method)
+print(unique_payment_method)
+
+unique_shopping_mall <- unique(data$shopping_mall)
+unique_shopping_mall
+```
+```{r}
+# convert gender to numerical values
+data$gender <- as.numeric(factor(data$gender,levels = unique(shopping_data$gender)))
+
+
+# convert category to numerical values
+data$category <- as.numeric(factor(data$category,levels = unique(shopping_data$category)))
+
+# convert payment method to numerical values
+data$payment_method <- as.numeric(factor(data$payment_method,levels = unique(shopping_data$payment_method)))
+
+# convert shopping mall to numerical values
+data$shopping_mall <- as.numeric(factor(data$shopping_mall,levels = unique(shopping_data$shopping_mall)))
+
+tail(data)
+```
+```{r}
+# define input variable
+x_data <- data[,!(names(data) %in% c("invoice_no","customer_id","quantity","gender","invoice_date","shopping_mall"))]
+x_data
+```
+```{r}
+# convert invoice_date to Date format 
+shopping_data <- data
+shopping_data$invoice_date <- as.Date(shopping_data$invoice_date,format = "%d/%m/%Y")
+
+# create a time series object with monthly frequency(assuming data is monthly)
+shopping_data.ts <-ts(x,start = c(as.numeric(format(min(shopping_data$invoice_date),"%Y")),
+                                  as.numeric(format(min(shopping_data$invoice_date),"%m"))),
+                      end = c(as.numeric(format(max(shopping_data$invoice_date),"%Y")),as.numeric(format(max(shopping_data$invoice_date),"%m"))),frequency = 12)
+
+
+# plot the time series of input x with one-month interval
+plot(shopping_data.ts,main = "Time series plot of Input",xlab = "Invoice Date",ylab = "inputs")
+```
+
+
+```{r}
+
+customer_data$invoice_date <- as.Date(customer_data$invoice_date, format = "%d/%m/%Y")
+
+# Calculate sales in thousands (quantity * price)
+customer_data$sales <- (customer_data$quantity * customer_data$price) / 1000  # divide by 1000 to convert to thousands
+
+# Aggregate sales data monthly
+monthly_sales <- aggregate(sales ~ format(invoice_date, "%Y-%m"), data = customer_data, sum)
+
+# Convert aggregated data to time series
+start_date = c(as.numeric(format(min(customer_data$invoice_date),"%Y")), as.numeric(format(min(customer_data$invoice_date), "%m")))
+
+end_date = c(as.numeric(format(max(customer_data$invoice_date), "%Y")),as.numeric(format(max(customer_data$invoice_date), "%m")))
+
+ts_sales <- ts(monthly_sales$sales, start = start_date, end=end_date,  frequency = 1)
+
+# Plot time series data for sales
+plot(ts_sales,
+     main = "Time Series Plot of Yearly Sales (in Thousands)",
+     xlab = "Date",
+     ylab = "Sales (in Thousands)",
+     type = "l",
+     col = "green",
+)
+```
+```{r}
+# task 1.1
+# convert invoice_date to Date format 
+shopping_data <- data
+shopping_data$invoice_date <- as.Date(data$invoice_date,format = "%d/%m/%Y")
+
+shopping_data$quantity <- as.numeric(shopping_data$quantity)
+# extract year and month from invoice date
+shopping_data$year_month <- format(shopping_data$invoice_date,"%Y-%m")
+
+
+# Aggregate quantity by year-month
+aggregated_data <- aggregate(quantity ~ year_month, data = shopping_data, sum)
+
+
+# convert year_month to date format for plotting
+aggregated_data$year_month <- as.Date(paste0(aggregated_data$year_month, "-01"))
+
+
+#create a time series object with monthly frequency
+shopping_data.ts <- ts(aggregated_data$quantity, start = c(as.numeric(format(min(aggregated_data$year_month),"%Y")),
+                                                           as.numeric(format(min(aggregated_data$year_month),"%m"))),
+                       end = c(as.numeric(format(max(aggregated_data$year_month),"%Y")),
+                               as.numeric(format(max(aggregated_data$year_month),"%m"))),frequency = 12)
+plot(shopping_data.ts,main = "Time series plot of Output(grouped by year-month)",xlab = "year-month",ylab = "Total quantity")
+
+```
+```{r}
+# convert invoice_date to Date format 
+customer_data$invoice_date <- as.Date(data$invoice_date,format = "%d/%m/%Y")
+
+# create a time series object with monthly frequency(assuming data is monthly)
+customer_data.ts <-ts(x,start = c(as.numeric(format(min(customer_data$invoice_date),"%Y")),
+                                  as.numeric(format(min(customer_data$invoice_date),"%m"))),
+                      end = c(as.numeric(format(max(customer_data$invoice_date),"%Y")),as.numeric(format(max(customer_data$invoice_date),"%m"))),frequency = 12)
+
+
+# plot the time series of input x with one-month interval
+plot(customer_data.ts, main = "Time series plot of Input",xlab = "Invoice Date",ylab = "inputs")
+```
+```{r}
+## Task 1.2
+x$price <- as.numeric(x$price)
+density_of_price = density(x$price)
+plot(density_of_price,main = "Density plot of price")
+```
+```{r}
+# creating  a Histogram of X inputs
+hist(x$price,freq = FALSE,main = "Histogram and density plot of price",xlab = "Price")
+lines(density_of_price, lwd = 2, col = "black")
+rug(jitter(x$price))
+```
+```{r}
+# Define payment methods
+payment_methods <- c("Credit Card", "Debit Card", "Cash")
+
+# Calculate the density of payment method
+density_of_payment <- density(x$payment_method)
+
+# Plot the density of payment method
+plot(density_of_payment, main = "Density plot of Payment Method", xlab = "Payment Method", ylab = "Density")
+
+# Add a histogram of payment method
+hist(x$payment_method, freq = FALSE, main = "Histogram and Density Plot of Payment Method", xlab = "Payment Method", ylab = "Density", 
+     breaks = length(unique(x$payment_method)), axes = FALSE)
+axis(1, at = 1:length(payment_methods), labels = payment_methods)
+lines(density_of_payment, lwd = 2, col = "black")
+rug(jitter(x$payment_method))
+
+```
+```{r}
+x$age <- as.numeric(x$age)
+density_of_age = density(x$age)
+
+plot(density_of_age,main = "Density plot of whole inputs")
+# creating  a Histogram of X inputs
+hist(x$age,freq = FALSE,main = "Histogram and density plot of age",xlab = "age")
+lines(density_of_age, lwd = 2, col = "black")
+rug(jitter(x$age))
+```
+```{r}
+x$category <- as.numeric(x$category)
+density_of_category = density(x$category)
+
+plot(density_of_category,main = "Density plot of whole inputs")
+# creating  a Histogram of X inputs
+hist(x$category,freq = FALSE,main = "Histogram and density plot of age",xlab = "age")
+lines(density_of_category, lwd = 2, col = "black")
+rug(jitter(x$category))
+```
+```{r}
+density_of_quantity = density(shopping_data$quantity)
+
+plot(density_of_quantity,main = "Density plot of whole inputs")
+# creating  a Histogram of X inputs
+hist(shopping_data$quantity,freq = FALSE,main = "Histogram and density plot of age",xlab = "age")
+lines(density_of_quantity, lwd = 2, col = "black")
+rug(jitter(x$quantity))
+```
+
+```{r}
+pairs.panels(data[,3:7], method = "pearson", hist.col = "#00AFBB", density = TRUE, ellipses = TRUE)
+```
+```{r}
+# Task 1.3
+# plotting age against quantity
+Y <- shopping_data$quantity
+plot(x$age,Y,main = "Correlation between age and quantity signal",xlab = "age",ylab = "quantity")
+plot(x$price,Y,main = "Correlation between age and quantity signal",xlab = "price",ylab = "quantity")
+plot(x$category,Y,main = "Correlation between age and quantity signal",xlab = "category",ylab = "quantity")
+
+plot(x$payment_method,Y,main = "Correlation between age and quantity signal",xlab = "payment_method",ylab = "quantity")
+
+
+```
+
+```{r}
+  # Copy necessary columns from 'data' DataFrame to create a new DataFrame 'X'
+  X <- data.frame(X1 = x$age, X2 = x$category, X3 = x$price, X4 = x$payment_method)
+
+# x <- x[,c("X1","X2","X3","X4")]
+
+# Convert x to matrix
+x <- as.matrix(x)
+y <- data$quantity
+  
+fit_polynomial_regression <- function(data, model) {
+
+  # Create polynomial features
+  X_poly <- cbind(1, do.call(cbind, model))
+
+  # Fit linear regression model
+  lm_model <- lm(y ~ ., data = as.data.frame(X_poly))
+
+  print(summary(lm_model))
+  # Get estimated coefficients (theta hat)
+  theta_hat <- coef(lm_model)
+  
+  # Get RSS value
+  RSS <- sum(lm_model$residuals^2)
+  
+  # Return the linear model
+  # Get AIC and BIC
+  aic <- AIC(lm_model)
+  bic <- BIC(lm_model)
+  
+  # Print AIC and BIC values
+  # print(paste("AIC:", aic))
+  # print(paste("BIC:", bic))
+
+  return(list(model = lm_model, theta_hat = theta_hat, AIC = aic, BIC = bic, RSS = RSS))
+}
+
+plot_residual_graph <- function(lm_model) {
+  # Extract fitted values and residuals from the linear regression model
+  fitted_values <- lm_model$fitted.values
+  residuals <- lm_model$residuals
+  
+  # Create the plot
+  plot(fitted_values, residuals,
+       xlab = "Fitted Values",
+       ylab = "Residuals",
+       main = "Residuals vs Fitted Values",
+       col = "blue",
+       pch = 16)  # Use filled circles for points
+  
+  # Add a horizontal line at y = 0 for reference
+  abline(h = 0, col = "red")
+  
+  # Add a smoothed line to visualize any patterns or trends
+  lines(lowess(fitted_values, residuals), col = "green")
+}
+
+models <- list(
+  list(X$X4, X$X1^2, X$X1^3, X$X2^4, X$X1^4),
+  list(X$X4, X$X1^3, X$X3^4),
+  list(X$X3^3, X$X3^4),
+  list(X$X2, X$X1^3, X$X3^4),
+  list(X$X4, X$X1^2, X$X1^3, X$X3^4)
+)
+
+# Fit polynomial regression for each model
+lm_models <- lapply(models, fit_polynomial_regression, data = data)
+
+# Print the fitted models
+for (i in seq_along(lm_models)) {
+  cat("Model ", i, ":\n")
+  cat("Theta Hat:", lm_models[[i]]$theta_hat, "\n")
+  cat("RSS:", lm_models[[i]]$RSS, "\n")
+  cat("BIC:", lm_models[[i]]$BIC, "\n")
+  cat("AIC:", lm_models[[i]]$AIC,"\n\n")
+  plot_residual_graph(lm_models[[i]]$model)
+}
+
+
+```
+
+```{r}
+# Define the function to calculate likelihoods for each model using RSS
+calculate_likelihoods <- function(lm_models) {
+  # Define a list to store likelihoods
+  likelihoods <- vector("numeric", length = length(lm_models))
+  
+  # Calculate likelihood for each model
+  for (i in seq_along(lm_models)) {
+    # Get the linear regression model
+    lm_model <- lm_models[[i]]$model
+    
+    # Calculate RSS
+    RSS <- lm_models[[i]]$RSS
+    
+    # Calculate the number of observations
+    n <- length(lm_model$residuals)
+
+    # Calculate the variance (assuming residuals are normally distributed)
+    sigma_squared <- RSS / (n - length(lm_model$coefficients))
+  
+    # Calculate likelihood using normal distribution PDF
+    likelihood <- -0.5 * n * log(2 * pi) - 0.5 * n * log(sigma_squared) - 0.5 * RSS / sigma_squared
+
+    likelihoods[i] <- likelihood
+  }
+  
+  return(likelihoods)
+}
+
+# Calculate likelihoods for each fitted model
+likelihoods <- calculate_likelihoods(lm_models)
+
+# Print likelihoods
+for (i in seq_along(likelihoods)) {
+  cat("Model ", i, " Likelihood:", likelihoods[i], "\n")
+}
+
+```
+
+```{r}
+# Plot QQ plot for each fitted model
+for (i in seq_along(lm_models)) {
+  cat("Model ", i, ":\n")
+  
+  # Get residuals from the fitted model
+  residuals <- lm_models[[i]]$model$residuals
+  
+  # Create QQ plot
+  qqnorm(residuals, main = paste("QQ Plot for Model", i), xlab = "Theoretical Quantiles", ylab = "Sample Quantiles", col = "blue")
+  qqline(residuals, col= "green")
+  
+  cat("\n")
+}
+```
+```{r}
+# Define the function to find the best-fitted model
+find_best_model <- function(lm_models) {
+  # Extract AIC, BIC, and RSS values from each fitted model
+  model_stats <- sapply(lm_models, function(model) {
+    c(AIC = model$AIC, BIC = model$BIC, RSS = model$RSS)
+  })
+  
+  # Find the index of the model with the lowest AIC, BIC, or RSS
+  best_model_index <- which.min(model_stats["AIC", ])
+  
+  # Return the best-fitted model and its statistics
+  return(list(model = lm_models[[best_model_index]], statistics = model_stats[, best_model_index], model_index = best_model_index))
+}
+
+# Find the best-fitted model
+best_model <- find_best_model(lm_models)
+
+# Print the best-fitted model and its statistics
+cat("Best-fitted Model:",best_model$model_index,"\n")
+print(coef(best_model$model$model))
+cat("AIC:", best_model$statistics["AIC"], "\n")
+cat("BIC:", best_model$statistics["BIC"], "\n")
+cat("RSS:", best_model$statistics["RSS"], "\n")
+```
+```{r}
+
+# Load necessary libraries
+library(tidymodels)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Split the data into training and testing sets
+split_X <- initial_split(data = as.data.frame(x), prop = 0.7)
+split_Y <- initial_split(data = as.data.frame(y), prop = 0.7)
+
+X_training_set <- training(split_X)
+X_testing_set <- testing(split_X)
+Y_training_set <- as.matrix(training(split_Y))
+Y_testing_set <- as.matrix(testing(split_Y))
+
+# Fit the linear regression model
+lm_model <- lm(Y_training_set ~ I(X1^3) + I(X3^4), data = as.data.frame(X_training_set))
+
+# Create the matrix for the testing data using the same model equation
+testing_ones <- matrix(1, nrow = nrow(X_testing_set), ncol = 1)
+X_testing_model <- cbind(testing_ones, I(X_testing_set[, "X1"])^3, I(X_testing_set[, "X3"])^4)
+
+# Calculate model predictions on the testing model
+Y_testing_hat <- predict(lm_model, newdata = as.data.frame(X_testing_model))
+
+# Evaluating 95% confidence intervals for the model predictions
+confidence_intervals <- predict(lm_model, newdata = as.data.frame(X_testing_model), interval = "confidence", level = 0.95)
+
+# Extract lower and upper confidence bounds
+lower_ci <- confidence_intervals[, "lwr"]
+upper_ci <- confidence_intervals[, "upr"]
+
+
+# Plotting
+plot(Y_testing_set, pch = 16, col = "blue", xlab = "Index", ylab = "Y value", main = "Model Predictions and 95% Confidence Intervals")
+# Add model predictions
+points(Y_testing_hat, col = "red", pch = 16)
+
+# Add error bars for 95% confidence intervals
+segments(x0 = 1:length(Y_testing_set), y0 = lower_ci, y1 = upper_ci, col = "green")
+
+# Add legend
+legend("topright", legend = c("Testing Data", "Model Predictions", "95% CI"), col = c("blue", "red", "green"), pch = 16, cex = 0.8)
+
+```
+```{r}
+# Split the data into training and testing sets
+split_X <- initial_split(data = as.data.frame(X), prop = 0.7)
+split_Y <- initial_split(data = as.data.frame(data$quantity), prop = 0.7)
+
+X_training_set <- training(split_X)
+X_testing_set <- testing(split_X)
+Y_training_set <- as.matrix(training(split_Y))
+Y_testing_set <- as.matrix(testing(split_Y))
+
+# Fit the linear regression model using the training set
+lm_model_3 <- lm(Y_training_set ~ ., data = as.data.frame(X_training_set))
+
+# Use lm result to calculate predicted values for the testing set
+Y_testing_set_predicted <- predict(lm_model_3, newdata = as.data.frame(X_testing_set))
+
+# Calculate the residual sum of squares (RSS) for the testing set
+RSS_testing_set <- sum((Y_testing_set - Y_testing_set_predicted)^2)
+
+# Print RSS_testing_set
+print(RSS_testing_set)
+
+# Define parameters
+theta_bias <- 2.829631
+theta_one <- 1.227041
+theta_two <- -2.124662
+epsilon <- RSS_testing_set * 2
+
+num_iterations <- 100
+accepted_values_1 <- numeric(num_iterations)
+accepted_values_2 <- numeric(num_iterations)
+counter <- 0 
+
+# Performing rejections ABC
+for (i in 1:num_iterations) {
+  range1 <- runif(1, -theta_bias, theta_bias)
+  range2 <- runif(1, -theta_one, theta_one)
+  
+  # Constructing new_theta_hat
+  new_theta_hat <- c(range1, range2, 0, 0)  # Assuming X_testing_set has 4 columns
+  
+  new_Y_Hat <- as.matrix(X_testing_set) %*% as.matrix(new_theta_hat)
+  new_RSS <- sum((Y_testing_set - new_Y_Hat) ^ 2)
+  
+  if (new_RSS > epsilon) {
+    accepted_values_1[counter + 1] <- range1
+    accepted_values_2[counter + 2] <- range2
+    counter <- counter + 1
+  }
+}
+
+accepted_values_1 <- accepted_values_1[1:counter]
+accepted_values_2 <- accepted_values_2[1:counter]
+
+# Plot histograms
+par(mfrow = c(1, 2))
+par(mar = c(5, 5, 4, 2) + 0.1)
+hist(accepted_values_1, main = "Histogram of Accepted values (parameters 1)")
+hist(accepted_values_2, main = "Histogram of Accepted values (parameters 2)")
+
+# Plot joint posterior distribution
+par(mfrow = c(1, 1))
+par(mar = c(5, 4, 4, 2) + 0.1) 
+plot(accepted_values_1, accepted_values_2, col = c("green", "red"), 
+     main = "Joint and Marginal Posterior Dist")
+
+```
+
